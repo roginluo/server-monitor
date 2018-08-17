@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html style="height: 100%">
+<head>
+    <meta charset="utf-8">
+</head>
+<body style="height: 100%; margin: 0">
+<div id="container" style="height: 100%"></div>
+<script type="text/javascript" src="js/echarts.min.js"></script>
+<script type="text/javascript" src="js/echarts-gl.min.js"></script>
+<script type="text/javascript" src="js/ecStat.min.js"></script>
+<script type="text/javascript" src="js/dataTool.min.js"></script>
+<script type="text/javascript" src="js/simplex.js"></script>
+<script type="text/javascript" src="js/jquery.min.js"></script>
+<script type="text/javascript">
+    var url = "/mem/kpi";
+    var subject = "内存使用量（单位：GB）";
+    var dom = document.getElementById("container");
+    var myChart = echarts.init(dom);
+    option = null;
+    var DATA_LENGTH = 60;
+    var data = [];
+    var xdata = [];
+    var data2=undefined,data3=undefined;
+    var serie1=undefined,serie1=undefined,serie3=undefined;
+
+
+    function reset() {
+        for (var i = 0; i < DATA_LENGTH; i++) {
+            data[i] = 0;
+            xdata[i] = '';
+        }
+        data2 = data.slice(0);
+        data3 = data.slice(0);
+        serie1 = {
+            name: "内存总量",
+            data: data,
+            showSymbol: false,
+            hoverAnimation: true,
+            type: 'line',
+            smooth: true
+        };
+        serie2 = {
+            name: "已使用",
+            data: data2,
+            showSymbol: false,
+            hoverAnimation: true,
+            type: 'line',
+            smooth: true
+        };
+        serie3 = {
+            name: "剩余内存",
+            data: data3,
+            showSymbol: false,
+            hoverAnimation: true,
+            type: 'line',
+            smooth: true
+        };
+        option = {
+            title: {text: subject},
+            animation: false,
+            legend: {
+                data: ['内存总量', '已使用', '剩余内存']
+            },
+            grid: {
+                left: '3%',
+                right: '4%',
+                bottom: '3%',
+                containLabel: true
+            },
+            tooltip: {
+                trigger: 'axis',
+                // formatter: function (datas) {
+                //     var res = datas[0].name + '<br/>'
+                //     for (var i = 0, length = datas.length; i < length; i++) {
+                //         res += datas[i].seriesName + '：'
+                //             + datas[i].value.toFixed(2) + 'GB<br/>'
+                //     }
+                //     return res
+                // },
+                axisPointer: {
+                    animation: true
+                }
+            },
+            xAxis: {
+                type: 'category',
+                boundaryGap: true,
+                data: xdata
+            },
+            yAxis: {
+                type: 'value',
+                // boundaryGap: [0, '100%'],
+                // max: 100,
+                // min: 0,
+                splitLine: {
+                    show: true
+                }
+            },
+            series: [serie1, serie2, serie3]
+        };
+
+
+        if (option && typeof option === "object") {
+            myChart.setOption(option, true);
+        }
+    }
+
+    reset();
+
+
+    function parseNumber(num) {
+        return Math.floor(num * 100) / 100;
+    }
+
+    function parseData(resp) {
+        // "{\"data\":{\"free\":3.5178565979003906,\"max\":16.0,\"thruput\":0.0,\"type\":\"MEMORY\",\"usage\":78.01339626312256,\"used\":12.48214340209961},\"status\":\"success\"}"
+        resp = JSON.parse(resp).data;
+
+        data.push(parseNumber(resp.max));
+        data2.push(parseNumber(resp.used));
+        data3.push(parseNumber(resp.free));
+        if (data.length > DATA_LENGTH) {
+            data.shift();
+            data2.shift();
+            data3.shift();
+        }
+
+    }
+
+
+    /**
+     * @param resp 解析请求
+     */
+    function handleResp(resp) {
+        parseData(resp);
+        myChart.setOption({
+            series: [serie1, serie2, serie3]
+        });
+    }
+
+    setInterval(function () {
+        if (url != undefined) {
+            $.ajax(url).then(handleResp);
+        }
+    }, 1000);
+</script>
+</body>
+</html>

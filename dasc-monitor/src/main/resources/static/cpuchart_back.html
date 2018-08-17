@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html style="height: 100%">
+<head>
+    <title>CPU使用率</title>
+    <meta charset="utf-8">
+</head>
+<body style="height: 100%; margin: 0">
+<div id="container" style="height: 100%"></div>
+<script type="text/javascript" src="js/echarts.min.js"></script>
+<script type="text/javascript" src="js/echarts-gl.min.js"></script>
+<script type="text/javascript" src="js/ecStat.min.js"></script>
+<script type="text/javascript" src="js/dataTool.min.js"></script>
+<script type="text/javascript" src="js/simplex.js"></script>
+<script type="text/javascript" src="js/jquery.min.js"></script>
+<script type="text/javascript">
+    var dom = document.getElementById("container");
+    var myChart = echarts.init(dom);
+    var data = [];
+    for(var i=0;i<200;i++){
+        data[i] = 0;
+    }
+    var option = {
+        animation:false,
+        title: {
+            text: 'CPU使用率'
+        },
+        tooltip: {
+            trigger: 'axis',
+            formatter: function (params) {
+                params = params[0];
+                return params.value + "%";
+            },
+            axisPointer: {
+                animation: true
+            }
+        },
+        xAxis: [{
+            type: 'category',
+            splitLine: {
+                show: false
+            }
+        }],
+        yAxis: {
+            type: 'value',
+            boundaryGap: [0, '100%'],
+            splitLine: {
+                show: false
+            }
+        },
+        series: [{
+            name: 'CPU使用率',
+            type: 'line',
+            showSymbol: false,
+            hoverAnimation: false,
+            data: data
+        }]
+    };
+
+    function parseData(resp) {
+        // resp = {"data":{"time":1533196139711,"combine":14.850975975975977},"status":"success"}
+        resp = JSON.parse(resp);
+        return value = resp.data.combine;
+    }
+
+    setInterval(function () {
+        $.ajax("cpu/combine").then(function (resp) {
+                if (data.length > 200)
+                    data.shift();
+                data.push(parseData(resp));
+                // if(data.length>400){
+                //     data.splice(0,200);
+                // }
+                myChart.setOption({
+                    series: [{
+                        data: data
+                    }]
+                });
+            }
+        );
+    }, 1000);
+    if (option && typeof option === "object") {
+        myChart.setOption(option, true);
+    }
+</script>
+</body>
+</html>

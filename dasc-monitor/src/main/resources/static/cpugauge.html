@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html style="height: 100%">
+<head>
+    <meta charset="utf-8">
+</head>
+<body style="height: 100%; margin: 0">
+<div id="container" style="height: 100%"></div>
+<script type="text/javascript" src="js/echarts.min.js"></script>
+<script type="text/javascript" src="js/echarts-gl.min.js"></script>
+<script type="text/javascript" src="js/ecStat.min.js"></script>
+<script type="text/javascript" src="js/dataTool.min.js"></script>
+<script type="text/javascript" src="js/simplex.js"></script>
+<script type="text/javascript" src="js/jquery.min.js"></script>
+<script type="text/javascript">
+    var dom = document.getElementById("container");
+    var myChart = echarts.init(dom);
+    option = null;
+    option = {
+        tooltip: {
+            formatter: "{a} <br/>{b} : {c}%"
+        },
+        toolbox: {
+            feature: {
+                restore: {},
+                saveAsImage: {}
+            }
+        },
+        series: [
+            {
+                name: 'CPU使用率',
+                type: 'gauge',
+                detail: {formatter: '{value}%'},
+                data: [{value: 100, name: 'CPU使用率'}]
+            }
+        ]
+    };
+    function parseData(resp) {
+        // resp = {"data":{"time":1533196139711,"combine":14.850975975975977},"status":"success"}
+        resp = JSON.parse(resp);
+        return value = resp.data.toFixed(2);
+    }
+    setInterval(function () {
+        $.ajax("cpu/combine").then(function (resp) {
+            option.series[0].data[0].value = parseData(resp);
+            myChart.setOption(option, true);
+        });
+    }, 200);
+    ;
+    if (option && typeof option === "object") {
+        myChart.setOption(option, true);
+    }
+</script>
+</body>
+</html>

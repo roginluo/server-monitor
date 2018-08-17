@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html style="height: 100%">
+<head>
+    <meta charset="utf-8">
+</head>
+<body style="height: 100%; margin: 0">
+<div id="container" style="height: 100%"></div>
+<script type="text/javascript" src="js/echarts.min.js"></script>
+<script type="text/javascript" src="js/echarts-gl.min.js"></script>
+<script type="text/javascript" src="js/ecStat.min.js"></script>
+<script type="text/javascript" src="js/dataTool.min.js"></script>
+<script type="text/javascript" src="js/simplex.js"></script>
+<script type="text/javascript" src="js/jquery.min.js"></script>
+<script type="text/javascript">
+    var url = "/mem/combine";
+    var subject = "内存使用率";
+    var dom = document.getElementById("container");
+    var myChart = echarts.init(dom);
+    option = null;
+    var DATA_LENGTH = 60;
+    var data = [];
+    var xdata = [];
+
+    for (var i = 0; i < DATA_LENGTH; i++) {
+        data[i] = 0;
+        xdata[i] = '';
+    }
+    option = {
+        title: {text: subject},
+        animation: false,
+        tooltip: {
+            trigger: 'axis',
+            formatter: function (params) {
+                params = params[0];
+                return params.seriesName +"：" +params.value.toFixed(2) + "%";
+            },
+            axisPointer: {
+                animation: true
+            }
+        },
+        xAxis: {
+            type: 'category',
+            boundaryGap: true,
+            data: xdata
+        },
+        yAxis: {
+            type: 'value',
+            boundaryGap: [0, '100%'],
+            max: 100,
+            min: 0,
+            splitLine: {
+                show: true
+            }
+        },
+        series: [{
+            name: subject,
+            data: data,
+            showSymbol: false,
+            hoverAnimation: true,
+            type: 'line',
+            smooth: true
+        }]
+    };
+    if (option && typeof option === "object") {
+        myChart.setOption(option, true);
+    }
+
+    function parseData(resp) {
+        resp = JSON.parse(resp);
+        return value = resp.data;
+    }
+
+
+    /**
+     * @param resp 解析请求
+     */
+    function handleResp(resp) {
+        data.push(parseData(resp))
+        if (data.length > DATA_LENGTH) {
+            data.shift();
+        }
+        myChart.setOption({
+            series: [{
+                data: data
+            }]
+        });
+    }
+
+    setInterval(function () {
+        $.ajax(url).then(handleResp);
+    }, 1000);
+</script>
+</body>
+</html>

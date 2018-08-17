@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+<button id="myButton" name="here" onclick="test2()" style="height: 30px;width: 50px;">按我</button>
+<script src="https://cdn.bootcss.com/jquery/3.2.1/jquery.js"></script>
+<script>
+    function authenicate(url) {
+        var defer = $.Deferred();
+        if (window.authenticationUrls == undefined) {
+            //authenticationUrls 里面存放的是将要被认证的url
+            window.authenticationUrls = [];
+            window.authenicationFrame = {};
+        }
+        authenticationUrls.push(url);
+        if (authenticationUrls[0] == url) {
+            var authenicationFrame = createIframe(url);
+        }
+        var closeLogin = function (e) {
+            //当收到dasc_authenticated时，表示认证已通过
+            if (e.data.indexOf("DASC_CLOSE_IFRAME") === 0) {
+                //删除iframe
+                authenicationFrame.remove();
+                //重新进行新的认证
+                var url = authenticationUrls.shift();
+                if (authenticationUrls.length > 0) {
+                    authenicationFrame = createIframe(authenticationUrls[0]);
+                }
+                console.log("Authentication Success ", url);
+                defer.resolve();
+            }
+        };
+        //监听iframe使用postMessage发送的message
+        window.removeEventListener('message', closeLogin, false);
+        window.addEventListener('message', closeLogin, false);
+        return defer.promise();
+    }
+
+    function createIframe(url) {
+        console.log("Authentication Begin " + url);
+        var iframe = $('<iframe/>', {
+            src: url
+            , style: 'height: 100%; width: 100%; position: fixed; top: 0; left: 0;'
+        });
+        //添加iframe对象到body中，遮盖整个页面
+        //TODO 需要在top中打开
+        iframe.appendTo('body');
+        return iframe;
+    }
+
+
+    function doGetUser() {
+        $.ajax({
+            url: 'http://172.24.16.4:8080/dgpCD-server-web/rest/users/v1/loginName',
+            type: 'get',
+            async: false,
+            cache: false,
+            contentType: false,
+            processData: false,
+            success: function (returnData) {
+                alert(returnData);
+            },
+            error: function (returnData) {
+                alert(returnData);
+            }
+        });
+    }
+
+    function test() {
+        $.ajax({
+            url: 'http://172.24.16.4:8080/dgpCD-server-web/rest/users/v1/loginName',
+            type: 'get',
+            async: false,
+            xhrFields: {withCredentials: true},
+            success: function (resp) {
+                // DascFilter2.4.2.REALESE之前使用这种方式进行认证
+                var status = resp.status;
+                if (status == "unauthenticated") {
+                    var urlAuth = resp.data;
+                    //认证完成之后重新请求资源
+                    authenicate(urlAuth).then(function () {
+                        alert(1);
+                    });
+                }
+            },
+            fail: function (resp, textStatus, jqXHR) {
+                var status = resp.status;
+                alert(status);
+            }
+        });
+    }
+
+    function test2() {
+        $.get({
+            // url: 'http://52.83.228.26:8081/dascService/u/info',
+            // url: 'http://192.168.2.185:8080/dgpCD-server-root',
+            url: 'http://dascserver:8089/dasc/',
+            // url: 'http://192.168.2.185:8080/dgpCD-server-root/rest/users/v1/loginName',
+            timeout: 300000,
+            headers: {
+                "X-Requested-With": "XMLHttpRequest"
+            },
+            xhrFields: {withCredentials: true},
+            success: function (result) {
+                alert(result);
+            },
+            error: function (resp) {
+                alert(JSON.stringify(resp))
+            }
+        });
+    }
+
+</script>
+</body>
+</html>

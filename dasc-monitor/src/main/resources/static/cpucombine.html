@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html style="height: 100%">
+<head>
+    <meta charset="utf-8">
+</head>
+<body style="height: 100%; margin: 0">
+<div id="container" style="height: 100%"></div>
+<script type="text/javascript" src="js/echarts.min.js"></script>
+<script type="text/javascript" src="js/echarts-gl.min.js"></script>
+<script type="text/javascript" src="js/ecStat.min.js"></script>
+<script type="text/javascript" src="js/dataTool.min.js"></script>
+<script type="text/javascript" src="js/simplex.js"></script>
+<script type="text/javascript" src="js/jquery.min.js"></script>
+<script type="text/javascript">
+    var url = "cpu/combine";
+    var dom = document.getElementById("container");
+    var myChart = echarts.init(dom);
+    option = null;
+    var DATA_LENGTH = 60;
+    var data = [];
+    var xdata = [];
+
+    function reset() {
+        data.length = 0;
+        xdata.length = 0;
+        for (var i = 0; i < DATA_LENGTH; i++) {
+            data[i] = 0;
+            xdata[i] = '';
+        }
+        option = {
+            title: {text: "CPU使用率"},
+            animation: false,
+            tooltip: {
+                trigger: 'axis',
+                formatter: function (params) {
+                    params = params[0];
+                    return params.seriesName +"：" +params.value.toFixed(2) + "%";
+                },
+                axisPointer: {
+                    animation: true
+                }
+            },
+            xAxis: {
+                type: 'category',
+                boundaryGap: true,
+                data: xdata
+            },
+            yAxis: {
+                type: 'value',
+                boundaryGap: [0, '100%'],
+                max: 100,
+                min: 0,
+                splitLine: {
+                    show: true
+                }
+            },
+            series: [{
+                name: "CPU使用率",
+                data: data,
+                showSymbol: false,
+                hoverAnimation: true,
+                type: 'line',
+                smooth: true
+            }]
+        };
+    }
+
+    reset();
+
+    if (option && typeof option === "object") {
+        myChart.setOption(option, true);
+    }
+
+    function parseData(resp) {
+        resp = JSON.parse(resp);
+        return value = resp.data;
+    }
+
+
+    /**
+     * @param resp 解析请求
+     */
+    function handleResp(resp) {
+        data.push(parseData(resp))
+        if (data.length > DATA_LENGTH) {
+            data.shift();
+        }
+        myChart.setOption({
+            series: [{
+                data: data
+            }]
+        });
+    }
+
+    setInterval(function () {
+        $.ajax(url).then(handleResp);
+    }, 1000);
+</script>
+</body>
+</html>
