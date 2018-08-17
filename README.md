@@ -1,0 +1,2 @@
+# server-monitor
+服务器监控基于sigar的jni接口获取硬件的基础信息，所以一定需要将sigar的动态链接库加入到java程序可以访问的库中，windows平台下可以放到java安装目录，或者tomcatlibe下
